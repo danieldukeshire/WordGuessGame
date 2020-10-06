@@ -16,7 +16,13 @@ Date: 10.5.2020
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 using namespace std;
+
+vector<string> client_names;
+vector<int> client_sockets;
+int number_clients = 0;
 
 
 /******************************************************************
@@ -36,7 +42,7 @@ string getRandomWord(int seed, vector<string>dictionary, int longest_length)
   {
     int random_index = rand()%dictionary.size();                                  // Determines a random index for the dictionary
     word = dictionary[random_index];
-    if(word.size() <= longest_length) break;
+    if((int)word.size() <= longest_length) break;
   }
 
   return word;
@@ -79,7 +85,25 @@ int main(int argc, char* argv[])
 
   string random_word = getRandomWord(seed, dictionary, longest_length);           // With the given word and length, finds a word of given length
 
+  for( int i = 0; i < 5; i++)
+  {
+    client_names.push_back("");
+    client_sockets.push_back(-1);
+  }
 
+  int socket_fd, socket_option = 1;
 
+  socket_fd = socket(PF_INET, SOCK_STREAM, 0);
+  if (socket_fd < 0)
+  {
+    printf("ERROR: create socket failed.\n");
+    return EXIT_FAILURE;
+  }
+
+  if(setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&socket_option, sizeof(socket_option)) < 0 )
+  {
+      perror("ERROR: setsockopt failed.\n");
+      return EXIT_FAILURE;
+  }
 
 }
