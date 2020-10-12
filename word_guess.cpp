@@ -21,6 +21,7 @@ Date: 10.5.2020
 #include <sys/select.h>
 #include <arpa/inet.h>
 #include <strings.h>
+#include <unistd.h>
 using namespace std;
 #define MAXBUFFER 3000
 
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
   string temp_word;                                                               // A temp word to add each iteration of the stream
   while(filename>>temp_word) dictionary.push_back(temp_word);                     // Reading the file into the vector of strings
   string random_word = getRandomWord(seed, dictionary, longest_length);           // With the given word and length, finds a word of given length
-
+  const char* secret_word = random_word.c_str();                                  // Converts string to char *
 
   // Setting up the clients vector, as the maximum number of clients is 5 ----------
   for( int i = 0; i < 5; i++)                                                     // Initializing the client_names array
@@ -106,7 +107,6 @@ int main(int argc, char* argv[])
   server.sin_port = htons(port);                                                  // Data Marshalling
   int server_len = sizeof(server);                                                // The size of the server
   int client_len = sizeof(client);                                                // The size of the client
-  //char buffer[MAXBUFFER];                                                         // Buffer to be read in by UDP
   fd_set fd_table;                                                                // The file descriptor table
   current_clients = 0;                                                            // The current number of clients is 0
   int opt = 1;
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
             else break;                                                           // Otherwise, the name is valid
           }
         }
-        // Have valid name, add to vector ----------------------------------------
+        // Have valid name, add to vector ------------------------------------------
         char * start = (char*)calloc(200, sizeof(char*));
         strcpy(start, "Let's start playing, ");
         strcat(start, name);
@@ -227,10 +227,67 @@ int main(int argc, char* argv[])
         strcat(current_players, rando_length);
         strcat(current_players, " letter(s)\n");
         send(fd_new, current_players, strlen(current_players), 0);                // Send message, wait for new username
+        free(current_players);
     }
 
-  }
+    // GAMEPLAY --------------------------------------------------------------------
+    for(int i=0; i<5; i+=1)                                                       // Now we can play the game ... loop over the clients
+    {
+      int temp_fd = client_sockets[i];                                            // the temp file descriptor
+      if(FD_ISSET(temp_fd, &fd_table))                                            // If the file descriptor is valid ...
+      {
+        char buffer[40];                                                          // the buffer to be read in
+        int n = read(temp_fd, buffer, 40);
+        if(n <= 0)                                                                // If nothing is read... we can close
+        {
+          current_clients -=1;                                                    // Decrement the total number of clients
+          close(temp_fd);
+          client_sockets[i] = -1;                                                 // Reset the client fd
+          free(client_names[i]);                                                  // Reset the client name
+          char* temp_client = (char*) calloc(2, sizeof(char));
+          temp_client = (char*)"";
+          client_names[i] = temp_client;
+          continue;
+        }
 
+        buffer[n-1] = '\0';                                                       // Otherwise, the client has sent a string
+        int buffer_length = n-1;
+        if(buffer_length != random_word.length())                                 // First check if the length of the words are equal
+        {
+          char* invalid_send = (char*)calloc(200, sizeof(char));
+          strcpy(invalid_send, "Invalid guess length. The secret word is ");
+          char rando_c[] = {'0' + random_word.length(), '\0'};                    // int to char* conversion, accounts for >1 digits
+          strcat(invalid_send, rando_c);
+          strcat(invalid_send, " letter(s).\n");
+          send(temp_fd, invalid_send, strlen(invalid_send), 0);                   // Sends string to that SINGLE user
+        }
+        else if(strcasecmp(buffer, secret_word)==0)                               // If the words are the same (guessed correctly) ...
+        {
+          char * valid = (char*)calloc(200, sizeof(char));
+          strcpy(valid, client_names[i]);
+          strcat(valid, " has correctly guessed the word ");
+          strcat(valid, secret_word);
+          strcat(valid, "\n");
+          for(int j=0; j<5; j+=1)
+          {
+            if(client_sockets[j] != -1 && FD_ISSET(client_sockets[j], &fd_table)) // Find all connected sockets
+            {
+              send(client_sockets[j], valid, strlen(valid), 0);                   // Send all clients message
+              close(client_sockets[j]);                                           // close all client sockets
+            }
+          }
+          return EXIT_SUCCESS;                                                    // Exit the program
+        }
+        else
+        {
+          // Implementation of string comparison
+        }
+
+      }
+    }
+
+
+  }
 
   return(EXIT_SUCCESS);
 }
