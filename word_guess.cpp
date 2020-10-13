@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
         char* user_ask = (char*)"Welcome to Guess the Word, please enter your username.\n";
 
         // Getting the name from the client, therefore we loop until a valid name is inputted
-        if( send(fd_new, user_ask, strlen(user_ask), 0) != strlen(user_ask) ) perror("ERROR on send()\n");
+        if( send(fd_new, user_ask, strlen(user_ask), 0) != (unsigned int) strlen(user_ask) ) perror("ERROR on send()\n");
         while(1)
         {
           int flag = 0;
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
 
         buffer[n-1] = '\0';                                                       // Otherwise, the client has sent a string
         int buffer_length = n-1;
-        if(buffer_length != random_word.length())                                 // First check if the length of the words are equal
+        if((unsigned int)buffer_length != random_word.length())                                 // First check if the length of the words are equal
         {
           char* invalid_send = (char*)calloc(200, sizeof(char));
           strcpy(invalid_send, "Invalid guess length. The secret word is ");
@@ -284,8 +284,8 @@ int main(int argc, char* argv[])
           int num_correct = 0;
           int num_correct_placed = 0;
 
-          for(int j = 0; j < strlen(secret_word); j++){
-            for(int k = 0 ; k < strlen(buffer); k++){
+          for(unsigned int j = 0; j < strlen(secret_word); j++){
+            for(unsigned int k = 0 ; k < strlen(buffer); k++){
               if(buffer[k] == secret_word[j ]){
                 num_correct++;
                 if(j == k){
