@@ -88,6 +88,7 @@ int main(int argc, char* argv[])
   string temp_word;                                                               // A temp word to add each iteration of the stream
   while(filename>>temp_word) dictionary.push_back(temp_word);                     // Reading the file into the vector of strings
   string random_word = getRandomWord(seed, dictionary, longest_length);           // With the given word and length, finds a word of given length
+  cout << random_word << endl;
   const char* secret_word = random_word.c_str();                                  // Converts string to char *
 
   // Setting up the clients vector, as the maximum number of clients is 5 ----------
@@ -282,7 +283,6 @@ int main(int argc, char* argv[])
         {
           int num_correct = 0;
           int num_correct_placed = 0;
-          printf("%s\n",secret_word);
 
           for(int j = 0; j < strlen(secret_word); j++){
             for(int k = 0 ; k < strlen(buffer); k++){
