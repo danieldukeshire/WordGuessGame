@@ -20,7 +20,7 @@ Date: 10.5.2020
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <arpa/inet.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 using namespace std;
 #define MAXBUFFER 3000
@@ -216,13 +216,13 @@ int main(int argc, char* argv[])
         client_names[i] = (char*)calloc(strlen(name), sizeof(char));
         strcpy(client_names[i], name);
         client_sockets[i] = fd_new;                                               // Set the socket accordingly
-        char current_c_char = '0' + current_clients;                              // int to char* conversion
-        const char *c = &current_c_char;
+        char current_c_char[] = {'0' + current_clients, '\0'};                              // int to char* conversion
+
         char rando_length[] = {'0' + random_word.length(), '\0'};                 // int to char* conversion, accounts for >1 digits
 
         char* current_players = (char*)calloc(200, sizeof(char));                 // Composing the string
         strcpy(current_players, "There are ");
-        strcat(current_players, c);
+        strcat(current_players, current_c_char);
         strcat(current_players, " player(s) playing. The secret word is ");
         strcat(current_players, rando_length);
         strcat(current_players, " letter(s)\n");
@@ -280,13 +280,45 @@ int main(int argc, char* argv[])
         }
         else
         {
-          // Implementation of string comparison
-        }
+          int num_correct = 0;
+          int num_correct_placed = 0;
+          printf("%s\n",secret_word);
 
+          for(int j = 0; j < strlen(secret_word); j++){
+            for(int k = 0 ; k < strlen(buffer); k++){
+              if(buffer[k] == secret_word[j ]){
+                num_correct++;
+                if(j == k){
+                  num_correct_placed++;
+                }
+                break;
+              }
+            }
+          }
+
+          char char_num_correct[] = {'0' + num_correct, '\0'};
+          char char_num_correct_placed[] = {'0' + num_correct_placed, '\0'};
+
+          char* msg = (char*)calloc(500, sizeof(char));
+          strcpy(msg, client_names[i]);
+          strcat(msg, " guessed ");
+          strcat(msg, buffer);
+          strcat(msg, ": ");
+          strcat(msg, char_num_correct);
+          strcat(msg, " letter(s) were correct and ");
+          strcat(msg, char_num_correct_placed);
+          strcat(msg, " were correctly placed.\n");
+          
+          for(int j=0; j<5; j+=1)
+          {
+            if(client_sockets[j] != -1 && FD_ISSET(client_sockets[j], &fd_table)) // Find all connected sockets
+            {
+              send(client_sockets[j], msg, strlen(msg), 0);                   // Send all clients message
+            }
+          }
+        }
       }
     }
-
-
   }
 
   return(EXIT_SUCCESS);
