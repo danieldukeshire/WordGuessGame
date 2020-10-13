@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
           strcat(valid, "\n");
           for(int j=0; j<5; j+=1)
           {
-            if(client_sockets[j] != -1 && FD_ISSET(client_sockets[j], &fd_table)) // Find all connected sockets
+            if(client_sockets[j] != -1) // Find all connected sockets
             {
               send(client_sockets[j], valid, strlen(valid), 0);                   // Send all clients message
               close(client_sockets[j]);                                           // close all client sockets
@@ -308,10 +308,10 @@ int main(int argc, char* argv[])
           strcat(msg, " letter(s) were correct and ");
           strcat(msg, char_num_correct_placed);
           strcat(msg, " were correctly placed.\n");
-          
+
           for(int j=0; j<5; j+=1)
           {
-            if(client_sockets[j] != -1 && FD_ISSET(client_sockets[j], &fd_table)) // Find all connected sockets
+            if(client_sockets[j] != -1) // Find all connected sockets
             {
               send(client_sockets[j], msg, strlen(msg), 0);                   // Send all clients message
             }
