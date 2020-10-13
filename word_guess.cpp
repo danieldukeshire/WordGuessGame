@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
         char* user_ask = (char*)"Welcome to Guess the Word, please enter your username.\n";
 
         // Getting the name from the client, therefore we loop until a valid name is inputted
-        if( send(fd_new, user_ask, strlen(user_ask), 0) != strlen(user_ask) ) perror("ERROR on send()\n");
+        if( send(fd_new, user_ask, strlen(user_ask), 0) != (unsigned int) strlen(user_ask) ) perror("ERROR on send()\n");
         while(1)
         {
           int flag = 0;
@@ -217,16 +217,9 @@ int main(int argc, char* argv[])
         client_names[i] = (char*)calloc(strlen(name), sizeof(char));
         strcpy(client_names[i], name);
         client_sockets[i] = fd_new;                                               // Set the socket accordingly
-        char current_c_char[] = {'0' + current_clients, '\0'};                              // int to char* conversion
-
-        char rando_length[] = {'0' + random_word.length(), '\0'};                 // int to char* conversion, accounts for >1 digits
 
         char* current_players = (char*)calloc(200, sizeof(char));                 // Composing the string
-        strcpy(current_players, "There are ");
-        strcat(current_players, current_c_char);
-        strcat(current_players, " player(s) playing. The secret word is ");
-        strcat(current_players, rando_length);
-        strcat(current_players, " letter(s)\n");
+        sprintf(current_players, "There are %d players(s) playing. The secred word is %lu letter(s).\n", current_clients, random_word.length());
         send(fd_new, current_players, strlen(current_players), 0);                // Send message, wait for new username
         free(current_players);
     }
@@ -253,14 +246,12 @@ int main(int argc, char* argv[])
 
         buffer[n-1] = '\0';                                                       // Otherwise, the client has sent a string
         int buffer_length = n-1;
-        if(buffer_length != random_word.length())                                 // First check if the length of the words are equal
+        if((unsigned int)buffer_length != random_word.length())                                 // First check if the length of the words are equal
         {
           char* invalid_send = (char*)calloc(200, sizeof(char));
-          strcpy(invalid_send, "Invalid guess length. The secret word is ");
-          char rando_c[] = {'0' + random_word.length(), '\0'};                    // int to char* conversion, accounts for >1 digits
-          strcat(invalid_send, rando_c);
-          strcat(invalid_send, " letter(s).\n");
+          sprintf(invalid_send, "Invalid guess length. The secret word is %lu letter(s).\n", random_word.length());
           send(temp_fd, invalid_send, strlen(invalid_send), 0);                   // Sends string to that SINGLE user
+          free(invalid_send);
         }
         else if(strcasecmp(buffer, secret_word)==0)                               // If the words are the same (guessed correctly) ...
         {
@@ -284,8 +275,8 @@ int main(int argc, char* argv[])
           int num_correct = 0;
           int num_correct_placed = 0;
 
-          for(int j = 0; j < strlen(secret_word); j++){
-            for(int k = 0 ; k < strlen(buffer); k++){
+          for(unsigned int j = 0; j < strlen(secret_word); j++){
+            for(unsigned int k = 0 ; k < strlen(buffer); k++){
               if(buffer[k] == secret_word[j ]){
                 num_correct++;
                 if(j == k){
@@ -296,19 +287,8 @@ int main(int argc, char* argv[])
             }
           }
 
-          char char_num_correct[] = {'0' + num_correct, '\0'};
-          char char_num_correct_placed[] = {'0' + num_correct_placed, '\0'};
-
           char* msg = (char*)calloc(500, sizeof(char));
-          strcpy(msg, client_names[i]);
-          strcat(msg, " guessed ");
-          strcat(msg, buffer);
-          strcat(msg, ": ");
-          strcat(msg, char_num_correct);
-          strcat(msg, " letter(s) were correct and ");
-          strcat(msg, char_num_correct_placed);
-          strcat(msg, " were correctly placed.\n");
-
+          sprintf(msg, "%s guessed %s: %d letter(s) were correct and %d were correctly placed.\n", client_names[i],buffer, num_correct, num_correct_placed);
           for(int j=0; j<5; j+=1)
           {
             if(client_sockets[j] != -1) // Find all connected sockets
@@ -316,6 +296,7 @@ int main(int argc, char* argv[])
               send(client_sockets[j], msg, strlen(msg), 0);                   // Send all clients message
             }
           }
+          free(msg);
         }
       }
     }
