@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
         client_sockets[i] = fd_new;                                               // Set the socket accordingly
 
         char* current_players = (char*)calloc(200, sizeof(char));                 // Composing the string
-        sprintf(current_players, "There are %d players(s) playing. The secred word is %lu letter(s).\n", current_clients, random_word.length());
+        sprintf(current_players, "There are %d player(s) playing. The secret word is %lu letter(s).\n", current_clients, random_word.length());
         send(fd_new, current_players, strlen(current_players), 0);                // Send message, wait for new username
         free(current_players);
     }
@@ -266,9 +266,16 @@ int main(int argc, char* argv[])
             {
               send(client_sockets[j], valid, strlen(valid), 0);                   // Send all clients message
               close(client_sockets[j]);                                           // close all client sockets
+              client_sockets[j] = -1;
+              free(client_names[j]);
+              client_names[j] = (char*)calloc(200, sizeof(char));
+              client_names[j] = (char*)"";
             }
           }
-          return EXIT_SUCCESS;                                                    // Exit the program
+          random_word = getRandomWord(seed, dictionary, longest_length);
+          secret_word = random_word.c_str();
+          current_clients = 0;
+          //return EXIT_SUCCESS;                                                    // Exit the program
         }
         else
         {
@@ -288,7 +295,7 @@ int main(int argc, char* argv[])
           }
 
           char* msg = (char*)calloc(500, sizeof(char));
-          sprintf(msg, "%s guessed %s: %d letter(s) were correct and %d were correctly placed.\n", client_names[i],buffer, num_correct, num_correct_placed);
+          sprintf(msg, "%s guessed %s: %d letter(s) were correct and %d letter(s) were correctly placed.\n", client_names[i],buffer, num_correct, num_correct_placed);
           for(int j=0; j<5; j+=1)
           {
             if(client_sockets[j] != -1) // Find all connected sockets
